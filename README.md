@@ -42,6 +42,7 @@ From the project root:
 
 ```bash
 docker compose up --build
+````
 
 This will:
 
