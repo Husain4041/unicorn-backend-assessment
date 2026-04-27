@@ -4,8 +4,11 @@ using UnicornBackend.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
+//builder.Services.AddDbContext<AppDbContext>(opt =>
+//    opt.UseInMemoryDatabase("ClaimsDb"));
+
 builder.Services.AddDbContext<AppDbContext>(opt =>
-    opt.UseInMemoryDatabase("ClaimsDb"));
+    opt.UseNpgsql(builder.Configuration.GetConnectionString("Default")));
 
 builder.Services.AddScoped<IClaimService, ClaimService>();
 
