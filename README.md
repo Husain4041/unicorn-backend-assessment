@@ -1,4 +1,3 @@
-````md
 # Unicorn Backend Assessment – Claims Processing API
 
 ## 1. About the Project
@@ -43,7 +42,6 @@ From the project root:
 
 ```bash
 docker compose up --build
-````
 
 This will:
 
