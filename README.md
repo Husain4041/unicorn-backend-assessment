@@ -1,22 +1,129 @@
-# API DESIGN
+````md
+# Unicorn Backend Assessment – Claims Processing API
 
-Base URL: /api/v1
+## 1. About the Project
+
+This project is a **.NET 10 Web API** that simulates an insurance claims processing system.
+
+It is designed around a **two-stage workflow system**:
+
+- **Makers**: Review and validate incoming claims
+- **Checkers**: Perform final verification and approval
+
+The system supports:
+- Claim ingestion
+- Role-based workflows
+- State transitions
+- Concurrency-safe assignment
+- Paginated and filtered retrieval of claims
+
+The backend uses:
+- ASP.NET Core Web API
+- Entity Framework Core
+- PostgreSQL
+- Docker (for containerized deployment)
+
+---
+
+## 2. Setup & Run Instructions
+
+### Prerequisites
+
+Make sure you have installed:
+
+- [.NET 10 SDK](https://dotnet.microsoft.com/en-us/download)
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/)
+- Git
+
+---
+
+### Running with Docker (Recommended)
+
+From the project root:
+
+```bash
+docker compose up --build
+````
+
+This will:
+
+* Start PostgreSQL database
+* Build the .NET API
+* Run both services together
+
+---
+
+### Access the API
+
+Once running:
+
+* API Base URL:
+
+```
+http://localhost:5000
+```
+
+* Swagger UI:
+
+```
+http://localhost:5000/swagger
+```
+
+---
+
+### Running Locally (Without Docker)
+
+1. Start PostgreSQL locally
+2. Update connection string in `appsettings.json`:
+
+```
+Host=localhost;Port=5432;Database=claimsdb;Username=postgres;Password=postgres
+```
+
+3. Run migrations:
+
+```bash
+dotnet ef database update
+```
+
+4. Start API:
+
+```bash
+dotnet run
+```
+
+---
+
+## 3. API Design
+
+### Base URL
+
+```
+/api/v1
+```
 
 ---
 
 ## Overview
 
-This API supports the ingestion, review, and processing of insurance claims through a two-stage workflow involving Makers and Checkers.
+This API supports a structured insurance claim workflow involving:
+
+* Claim creation
+* Maker review
+* Checker approval
+* Final completion
 
 ---
 
 ## 1. Claim Ingestion
 
-### POST /claims
+### Create Claim
 
-Creates a new claim.
+**POST** `/claims`
 
-Request Body:
+Request:
+
+```json
 {
   "patientName": "John Doe",
   "patientAge": 45,
@@ -26,23 +133,29 @@ Request Body:
   "medicalReason": "Appendicitis",
   "claimAmount": 5000
 }
+```
 
-Response (201 Created):
+Response:
+
+```json
 {
   "id": 1,
   "status": "New",
   "createdAt": "2026-01-01T10:00:00Z"
 }
+```
 
 ---
 
 ## 2. Maker Flow
 
-### GET /claims?status=New
+### Get New Claims
 
-Retrieve claims available for Makers.
+**GET** `/claims?status=New`
 
-Response (200 OK):
+Response:
+
+```json
 [
   {
     "id": 1,
@@ -51,75 +164,84 @@ Response (200 OK):
     "status": "New"
   }
 ]
+```
 
 ---
 
-### POST /claims/{id}/assign
+### Assign Claim
 
-Assign a claim to a Maker.
+**POST** `/claims/{id}/assign`
 
-Request Body:
+Request:
+
+```json
 {
   "makerId": 101
 }
+```
 
-Response (200 OK):
+Response:
+
+```json
 {
   "id": 1,
   "status": "AssignedToMaker"
 }
+```
 
 Errors:
-- 404 Not Found → Claim does not exist
-- 409 Conflict → Claim already assigned
+
+* 404 → Claim not found
+* 409 → Already assigned
 
 ---
 
-### POST /claims/{id}/maker-review
+### Maker Review
 
-Submit Maker review.
+**POST** `/claims/{id}/maker-review`
 
-Request Body:
+Request:
+
+```json
 {
   "makerId": 101,
   "recommendation": "Approve",
   "feedback": "All documents valid"
 }
+```
 
-Response (200 OK):
+Response:
+
+```json
 {
   "claimId": 1,
   "status": "MakerReviewed"
 }
+```
 
 Errors:
-- 400 Bad Request → Invalid state transition
-- 403 Forbidden → Unauthorized role
-- 404 Not Found → Claim not found
+
+* 400 → Invalid state transition
+* 403 → Unauthorized role
+* 404 → Not found
 
 ---
 
 ## 3. Checker Flow
 
-### GET /claims?status=MakerReviewed
+### Get Maker Reviewed Claims
 
-Retrieve claims available for Checkers.
-
-Response (200 OK):
-[
-  {
-    "id": 1,
-    "status": "MakerReviewed"
-  }
-]
+**GET** `/claims?status=MakerReviewed`
 
 ---
 
-### GET /claims/{id}
+### Get Claim Details
 
-Retrieve full claim details including Maker review.
+**GET** `/claims/{id}`
 
-Response (200 OK):
+Response:
+
+```json
 {
   "id": 1,
   "patientName": "John Doe",
@@ -132,54 +254,59 @@ Response (200 OK):
     "createdAt": "2026-01-01T11:00:00Z"
   }
 }
-
-Errors:
-- 404 Not Found → Claim not found
+```
 
 ---
 
-### POST /claims/{id}/checker-review
+### Checker Review
 
-Submit Checker decision.
+**POST** `/claims/{id}/checker-review`
 
-Request Body:
+Request:
+
+```json
 {
   "checkerId": 201,
   "decision": "Approve",
   "feedback": "Verified and approved"
 }
+```
 
-Response (200 OK):
+Response:
+
+```json
 {
   "claimId": 1,
   "status": "Completed"
 }
-
-Errors:
-- 400 Bad Request → Invalid state transition
-- 403 Forbidden → Unauthorized role
-- 404 Not Found → Claim not found
+```
 
 ---
 
 ## 4. Claim History & Filtering
 
-### GET /claims
+### Get Claims (Paginated)
 
-Retrieve paginated and filtered claims.
+**GET** `/claims`
 
 Query Parameters:
-- status
-- insuranceCompanyId
-- fromDate
-- toDate
-- page (default: 1)
-- pageSize (default: 10)
+
+* status
+* insuranceCompanyId
+* fromDate
+* toDate
+* page (default: 1)
+* pageSize (default: 10)
 
 Example:
-GET /claims?status=Completed&page=1&pageSize=10
 
-Response (200 OK):
+```
+GET /claims?status=Completed&page=1&pageSize=10
+```
+
+Response:
+
+```json
 {
   "data": [
     {
@@ -192,60 +319,42 @@ Response (200 OK):
   "pageSize": 10,
   "total": 100
 }
+```
 
 ---
 
-## 5. Forwarding Representation
+## 5. Status Codes
 
-Forwarding is handled internally by the system after Checker decision.
-
-Behavior:
-- When Checker submits decision → claim marked as "Completed"
-- System logs forwarding event internally
-
-Optional Representation:
-{
-  "claimId": 1,
-  "forwarded": true,
-  "forwardedAt": "2026-01-01T12:00:00Z"
-}
+* 200 → Success
+* 201 → Created
+* 400 → Bad Request
+* 403 → Forbidden
+* 404 → Not Found
+* 409 → Conflict
+* 500 → Server Error
 
 ---
 
-## 6. Status Codes
+## 6. State Transitions
 
-- 200 OK → Successful request
-- 201 Created → Resource successfully created
-- 400 Bad Request → Validation or invalid state transition
-- 403 Forbidden → Unauthorized action based on role
-- 404 Not Found → Resource not found
-- 409 Conflict → Concurrency issue or duplicate action
-- 500 Internal Server Error → Unexpected server error
+Valid flow:
 
----
+* New → AssignedToMaker
+* AssignedToMaker → MakerReviewed
+* MakerReviewed → Completed
 
-## 7. State Transition Rules
+Invalid actions:
 
-Valid transitions:
-
-- New → AssignedToMaker
-- AssignedToMaker → MakerReviewed
-- MakerReviewed → Completed
-
-Invalid transitions:
-- Skipping Maker review
-- Re-reviewing completed claims
-- Assigning already assigned claims
-
-Invalid transitions result in:
-- 400 Bad Request OR
-- 409 Conflict
+* Skipping steps
+* Reprocessing completed claims
+* Double assignment
 
 ---
 
 ## Notes
 
-- All timestamps are in ISO 8601 format (UTC)
-- Reviews are immutable once submitted
-- Concurrency is handled at assignment and state transition level
-- Pagination is required for all list endpoints
+* All timestamps use ISO 8601 (UTC)
+* Maker/Checker actions are immutable once submitted
+* Concurrency is enforced during assignment and transitions
+* Pagination is required for list endpoints
+
