@@ -13,7 +13,11 @@ public class Claim
     public string MedicalReason { get; set; } = string.Empty;
     public decimal ClaimAmount { get; set; }
     public ClaimStatus Status { get; set; }
+    public int? MakerId { get; set; }
+    public int? CheckerId { get; set; }
     public DateTime CreatedAt { get; set; }
+
+    public DateTime UpdatedAt { get; set; }
 
     [Timestamp]
     public byte[] RowVersion { get; set; }  = new byte[0];

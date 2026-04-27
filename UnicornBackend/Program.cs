@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using UnicornBackend.Data;
+using UnicornBackend.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -9,6 +10,7 @@ builder.Services.AddDbContext<AppDbContext>(opt =>
 builder.Services.AddScoped<IClaimService, ClaimService>();
 
 builder.Services.AddControllers();
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
